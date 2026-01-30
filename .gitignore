@@ -1,0 +1,19 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+env/
+venv/
+.env
+
+# Бази даних
+db.sqlite3
+*.db
+xtenant_tenant_*
+
+# Docker
+.dockerignore
+
+# macOS
+.DS_Store
