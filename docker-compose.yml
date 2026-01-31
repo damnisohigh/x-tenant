@@ -1,19 +1,24 @@
-version: '3.8'
-
 services:
+  # PostgreSQL database service
   db:
     image: postgres:15
+    container_name: xtenant-db
     volumes:
       - postgres_data:/var/lib/postgresql/data
-    environment:
-      - POSTGRES_DB=xtenant_core
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=postgres_pass
+    env_file:
+      - .env
     ports:
       - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $POSTGRES_USER"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
+  # Django application service
   web:
     build: .
+    container_name: xtenant-web
     command: >
       sh -c "python manage.py migrate &&
              python manage.py runserver 0.0.0.0:8000"
@@ -21,22 +26,13 @@ services:
       - .:/app
     ports:
       - "8000:8000"
-    environment:
-      - DJANGO_SECRET_KEY=docker-secret
-      - DJANGO_DEBUG=1
-      - CORE_DB_ENGINE=django.db.backends.postgresql
-      - CORE_DB_NAME=xtenant_core
-      - CORE_DB_USER=postgres
-      - CORE_DB_PASSWORD=postgres_pass
-      - CORE_DB_HOST=db
-      - CORE_DB_PORT=5432
-      - TENANT_DB_ENGINE=django.db.backends.postgresql
-      - TENANT_DB_USER=postgres
-      - TENANT_DB_PASSWORD=postgres_pass
-      - TENANT_DB_HOST=db
-      - TENANT_DB_PORT=5432
+    env_file:
+      - .env
     depends_on:
-      - db
+      db:
+        condition: service_healthy
+    restart: unless-stopped
 
 volumes:
   postgres_data:
+    name: xtenant_postgres_data
